@@ -1,0 +1,20 @@
+{
+    "name": "megumin-bot-md",
+    "version": "1.0.0",
+    "description": "Un bot de WhatsApp que genera un código QR al iniciar.",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "keywords": [
+        "whatsapp",
+        "bot",
+        "qr",
+        "open-wa"
+    ],
+    "author": "Tu Nombre",
+    "license": "MIT",
+    "dependencies": {
+        "@open-wa/wa-automate": "^8.0.0"
+    }
+}
