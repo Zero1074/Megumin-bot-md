@@ -1,56 +1,81 @@
-const { WAConnection, MessageType } = require('@adiwajshing/baileys');
-const fs = require('fs');
+"use strict";
 
-async function startBot() {
-    const conn = new WAConnection();
+import './config.js'; // Configuración inicial
+import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@adiwajshing/baileys';
+import { Low, JSONFile } from 'lowdb';
+import fs from 'fs';
+import path from 'path';
+import yargs from 'yargs';
+import chalk from 'chalk';
+import { createRequire } from 'module';
 
-    // Evento para generar un código QR
-    conn.on('qr', (qr) => {
-        console.log('🔒 Escanea este código QR con tu WhatsApp para conectarte:');
-        console.log(qr); // El QR aparecerá en la terminal
-    });
+const __dirname = path.resolve();
+const require = createRequire(import.meta.url);
 
-    // Evento de conexión exitosa
-    conn.on('open', () => {
-        console.log('✅ Bot conectado exitosamente a WhatsApp.');
-        // Guardar credenciales para evitar reescaneo del QR
-        const authInfo = conn.base64EncodedAuthInfo();
-        fs.writeFileSync('session.json', JSON.stringify(authInfo, null, '\t'));
-    });
+// Cargar base de datos
+global.db = new Low(new JSONFile(path.join(__dirname, 'database.json')));
+await global.db.read();
+global.db.data ||= { users: {}, chats: {} };
 
-    // Cargar sesión previa si existe
-    if (fs.existsSync('./session.json')) {
-        conn.loadAuthInfo('./session.json');
-    }
+// Configuración de la conexión
+const { state, saveCreds } = await useMultiFileAuthState('auth');
+const { version } = await fetchLatestBaileysVersion();
 
-    // Evento para escuchar mensajes
-    conn.on('chat-update', async (chat) => {
-        if (!chat.hasNewMessage) return;
-        const message = chat.messages.all()[0];
-        if (!message.message || message.key.fromMe) return;
+const conn = makeWASocket({
+    printQRInTerminal: true,
+    auth: state,
+    version,
+    logger: pino({ level: 'silent' }), // Cambia a 'info' para más detalles
+});
 
-        const sender = message.key.remoteJid;
-        const text = message.message.conversation || "";
-
-        console.log(📩 Mensaje recibido de ${sender}: ${text});
-
-        // Responder al comando ".menu"
-        if (text === '.menu') {
-            const menuText = `
-📜 Menú del Bot:
-1. Opción 1: Descripción
-2. Opción 2: Descripción
-...
-
-🤖 Este es un bot básico en desarrollo.
-            `;
-            await conn.sendMessage(sender, menuText, MessageType.text);
-            console.log(✅ Menú enviado a ${sender});
+// Eventos de conexión
+conn.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect } = update;
+    if (connection === 'close') {
+        console.log('Conexión cerrada, intentando reconectar...');
+        if (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut) {
+            conn = makeWASocket({ auth: state });
+        } else {
+            console.log('Sesión cerrada, por favor vuelve a escanear el código QR.');
         }
-    });
+    } else if (connection === 'open') {
+        console.log('Conectado correctamente.');
+    }
+});
 
-    // Conectar al servidor de WhatsApp
-    await conn.connect();
+// Cargar plugins
+const pluginFolder = path.join(__dirname, 'plugins');
+const pluginFilter = (filename) => /\.js$/.test(filename);
+global.plugins = {};
+
+async function loadPlugins() {
+    for (const filename of fs.readdirSync(pluginFolder).filter(pluginFilter)) {
+        try {
+            const file = path.join(pluginFolder, filename);
+            const module = await import(file);
+            global.plugins[filename] = module.default || module;
+        } catch (err) {
+            console.error(`Error al cargar el plugin ${filename}:`, err);
+        }
+    }
 }
 
-startBot();
+await loadPlugins();
+
+// Manejar mensajes
+conn.ev.on('messages.upsert', async (m) => {
+    // Aquí puedes manejar los mensajes recibidos y ejecutar comandos
+    const msg = m.messages[0];
+    if (!msg.key.fromMe) {
+        const command = msg.body.trim().split(' ')[0]; // Extraer el comando
+        if (command in global.plugins) {
+            await global.plugins[command](msg, { conn });
+        }
+    }
+});
+
+// Guardar credenciales
+conn.ev.on('creds.update', saveCreds);
+
+// Iniciar el bot
+console.log(chalk.green('Bot iniciado...'));
