@@ -1,12 +1,40 @@
 {
-  "name": "Megumin-bot",
+  "name": "megumin-bot-md",
   "version": "1.0.0",
-  "description": "Bot basico",
+  "description": "Un bot de WhatsApp basado en Baileys con múltiples funciones.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "update": "git pull origin main && npm install"
   },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "megumin"
+  ],
+  "author": "Zero1074",
+  "license": "MIT",
   "dependencies": {
-    "@adiwajshing/baileys": "^4.4.0"
-    }
-  }
+    "@adiwajshing/baileys": "^5.0.0",
+    "axios": "^0.21.1",
+    "node-fetch": "^2.6.1",
+    "fs": "0.0.1-security",
+    "chalk": "^4.1.0",
+    "cfonts": "^2.2.0",
+    "yargs": "^17.0.1",
+    "nodemon": "^2.0.7"
+  },
+  "devDependencies": {
+    "typescript": "^4.4.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zero1074/Megumin-bot-md.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Zero1074/Megumin-bot-md/issues"
+  },
+  "homepage": "https://github.com/Zero1074/Megumin-bot-md#readme"
+}
