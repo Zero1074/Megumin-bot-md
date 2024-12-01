@@ -7,7 +7,7 @@ import readline from 'readline';
 import yargs from 'yargs';
 import chalk from 'chalk'; 
 import fs from 'fs'; 
-import './config.js';
+import './config.js'; // Asegúrate de que tu archivo de configuración esté correcto
 
 const { PHONENUMBER_MCC } = await import('baileys');
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -18,7 +18,7 @@ let isRunning = false;
 
 const question = (texto) => new Promise((resolver) => rl.question(texto, resolver));
 
-console.log(chalk.yellow.bold('—◉ㅤIniciando sistema...'));
+console.log(chalk.yellow.bold('—◉ㅤIniciando Megumin-bot...'));
 
 function verificarOCrearCarpetaAuth() {
   const authPath = join(__dirname, global.authFile);
@@ -55,15 +55,13 @@ async function start(file) {
   if (isRunning) return;
   isRunning = true;
 
-  // Cambiar el nombre del bot aquí
-  say('The Megumin\nBot', {
+  say('Megumin\nBot', {
     font: 'chrome',
     align: 'center',
     gradient: ['red', 'magenta'],
   });
 
-  // Cambiar el autor aquí
-  say(`Bot creado por Megumin`, {
+  say(`Bot creado por Zero`, {
     font: 'console',
     align: 'center',
     gradient: ['red', 'magenta'],
